@@ -45,7 +45,18 @@ class TransactionTile extends StatelessWidget {
         TextSpan(children: [
           TextSpan(text: fmtDateShort(t.date)),
           const TextSpan(text: '   '),
-          TextSpan(text: t.category),
+          TextSpan(text: t.categoryLabel),
+          if (t.reconciled)
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 6),
+                child: Tooltip(
+                  message: 'Reconciled',
+                  child: Icon(Icons.verified_outlined, size: 14, color: l.moneyIn),
+                ),
+              ),
+            ),
           if (invoiceNumber != null) ...[
             const TextSpan(text: '   '),
             TextSpan(

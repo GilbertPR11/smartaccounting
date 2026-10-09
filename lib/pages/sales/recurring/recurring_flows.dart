@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/recurring_invoice_model.dart';
 import '../../../routes/routes.dart';
 
-/// Navigation flows for recurring invoices.
+// Navigation flows for recurring invoices.
 
 Future<void> openRecurringDetail(BuildContext context, String scheduleId) =>
     Navigator.pushNamed(context, PageRoutes.recurringDetail,

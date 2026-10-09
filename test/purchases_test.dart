@@ -9,6 +9,7 @@ import 'package:smartaccounting/models/bill_model.dart';
 import 'package:smartaccounting/models/invoice_model.dart';
 import 'package:smartaccounting/models/receipt_model.dart';
 import 'package:smartaccounting/models/transaction_model.dart';
+import 'package:smartaccounting/pages/home/widgets/side_menu.dart';
 import 'package:smartaccounting/pages/purchases/bill/bill_detail_page.dart';
 import 'package:smartaccounting/repository/bill_repository.dart';
 import 'package:smartaccounting/repository/receipt_repository.dart';
@@ -171,12 +172,13 @@ void main() {
 
     testWidgets('desktop: bills open side by side', (tester) async {
       await pumpAt(tester, const Size(1440, 900));
-      await tester.tap(find.text('Purchases'));
+      final inMenu = find.byType(SideMenuPanel);
+      await tester.tap(find.descendant(of: inMenu, matching: find.text('Purchases')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Bills'));
+      await tester.tap(find.descendant(of: inMenu, matching: find.text('Bills')));
       await tester.pumpAndSettle();
       expect(find.byType(BillDetailPage), findsOneWidget);
-      expect(find.byType(NavigationRail), findsOneWidget);
+      expect(find.byType(SideMenuPanel), findsOneWidget); // sidebar stays
     });
   });
 }

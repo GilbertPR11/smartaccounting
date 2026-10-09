@@ -23,6 +23,7 @@ import '../purchases/purchase_flows.dart';
 import '../sales/invoice/new_invoice_flow.dart';
 import 'widgets/balance_sparkline.dart';
 import 'widgets/cash_flow_chart.dart';
+import '../home/app_shell.dart';
 
 /// The first screen: where your cash stands, and what needs doing.
 class DashboardPage extends StatelessWidget {
@@ -56,9 +57,14 @@ class DashboardPage extends StatelessWidget {
 
     // ------------------------------------------------------------ pieces
 
+    final menuButton = AppShell.menuButton(context);
     final header = Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        if (menuButton != null) ...[
+          Padding(padding: const EdgeInsets.only(bottom: Space.xs), child: menuButton),
+          const SizedBox(width: Space.xs),
+        ],
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

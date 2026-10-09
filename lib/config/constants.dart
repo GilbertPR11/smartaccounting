@@ -46,7 +46,9 @@ class Constants {
   /// Uploaded logos are resized on pick; this is a safety cap.
   static const int maxLogoBytes = 2 * 1024 * 1024;
 
-  /// Expense categories for bills and receipts.
+  /// The expense accounts a new business starts with (see seed_data.dart).
+  /// After that the chart of accounts is the source of truth: pickers list
+  /// expense accounts from AccountBloc, so accounts users add show up too.
   static const List<String> expenseCategories = [
     'Rent',
     'Utilities',
@@ -76,6 +78,9 @@ class Constants {
   static const Set<String> nonSalesIncomeCategories = {
     'Owner Investment',
     'Loan',
+    'Loans',
     'Transfer',
+    'Transfer Clearing',
+    'Other Income',
   };
 }

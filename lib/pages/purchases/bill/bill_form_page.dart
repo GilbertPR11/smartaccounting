@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/bill_form/bill_form_bloc.dart';
+import '../../../bloc/product/product_bloc.dart';
 import '../../../bloc/receipt/receipt_bloc.dart';
 import '../../../bloc/vendor/vendor_bloc.dart';
 import '../../../components/centered_list_view.dart';
@@ -13,6 +14,7 @@ import '../../../components/section_header.dart';
 import '../../../components/vendor_dialog.dart';
 import '../../../config/constants.dart';
 import '../../../models/bill_model.dart';
+import '../../../models/product_model.dart';
 import '../../../models/receipt_model.dart';
 import '../../../repository/bill_repository.dart';
 import '../../../repository/setting_repository.dart';
@@ -158,11 +160,61 @@ class _BillFormViewState extends State<_BillFormView> {
     if (picked != null) setState(() => _issueDate = dateOnly(picked));
   }
 
+  /// For a new line, offers saved "products you buy" first (they pre-fill
+  /// description, cost, tax and category).
+  /// Returns (cancelled, draft): draft is null for a custom line.
+  Future<(bool, BillLine?)> _draftFromProduct() async {
+    final products = context.read<ProductBloc>().state.bought;
+    if (products.isEmpty) return (false, null);
+    final choice = await showModalBottomSheet<Object>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_note),
+              title: const Text('Custom line'),
+              onTap: () => Navigator.pop(ctx, 'custom'),
+            ),
+            const Divider(height: 1),
+            for (final p in products)
+              ListTile(
+                title: Text(p.name),
+                subtitle: Text(p.expenseCategory ?? ''),
+                trailing: MoneyText(p.purchasePrice ?? 0),
+                onTap: () => Navigator.pop(ctx, p),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null) return (true, null);
+    if (choice is! Product) return (false, null);
+    return (
+      false,
+      BillLine(
+        description: choice.name,
+        category: choice.expenseCategory ?? _defaultCategory ?? 'Other',
+        amount: choice.purchasePrice ?? 0,
+        tax: choice.tax,
+      ),
+    );
+  }
+
   Future<void> _editLine([int? index]) async {
+    BillLine? draft;
+    if (index == null) {
+      final (cancelled, picked) = await _draftFromProduct();
+      if (cancelled || !mounted) return;
+      draft = picked;
+    }
     final line = await showBillLineEditor(
       context,
-      line: index == null ? null : _lines[index],
+      line: index == null ? draft : _lines[index],
       defaultCategory: _defaultCategory,
+      isNew: index == null,
     );
     if (line == null) return;
     setState(() {

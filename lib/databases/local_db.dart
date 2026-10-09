@@ -1,17 +1,22 @@
 import 'dart:async';
 
+import '../models/account_model.dart';
 import '../models/bill_model.dart';
 import '../models/business_profile_model.dart';
 import '../models/customer_model.dart';
 import '../models/estimate_model.dart';
 import '../models/invoice_model.dart';
 import '../models/invoice_template_model.dart';
+import '../models/journal_model.dart';
 import '../models/product_model.dart';
 import '../models/receipt_model.dart';
+import '../models/reconciliation_model.dart';
 import '../models/recurring_invoice_model.dart';
+import '../models/tag_model.dart';
 import '../models/transaction_model.dart';
 import '../models/vendor_model.dart';
 import '../utils/format.dart';
+import 'default_chart.dart';
 import 'seed_data.dart';
 
 enum DbTable {
@@ -25,6 +30,10 @@ enum DbTable {
   receipts,
   estimates,
   recurring,
+  accounts,
+  journals,
+  tags,
+  reconciliations,
 }
 
 /// In-memory stand-in for the local database (smartpos: `Databases/db.dart`).
@@ -37,6 +46,7 @@ enum DbTable {
 class LocalDb {
   LocalDb({DateTime? today, bool seed = true})
       : today = dateOnly(today ?? DateTime.now()) {
+    DefaultChart.apply(this); // every business starts with a chart of accounts
     if (seed) SeedData.apply(this);
   }
 
@@ -46,8 +56,20 @@ class LocalDb {
   // Settings (single row).
   BusinessProfile profile = const BusinessProfile(name: 'My Business');
   InvoiceTemplate invoiceTemplate = const InvoiceTemplate();
+  /// Cash at the start of the books, held in the first money account.
   double openingBalance = 15000;
-  final List<String> accounts = ['Maybank Current', 'Cash on Hand'];
+
+  /// The account holding [openingBalance] (set by DefaultChart). An id, so
+  /// renaming or re-coding accounts never moves the opening balance.
+  String? openingAccountId;
+
+  /// Names of the bank and cash accounts in the chart, by code.
+  List<String> get accounts => (chart.values
+          .where((a) => a.isMoney && !a.archived)
+          .toList()
+        ..sort((a, b) => a.code.compareTo(b.code)))
+      .map((a) => a.name)
+      .toList();
 
   // Tables. Maps keep insertion order.
   final Map<String, Customer> customers = {};
@@ -59,6 +81,14 @@ class LocalDb {
   final Map<String, Receipt> receipts = {};
   final Map<String, Estimate> estimates = {};
   final Map<String, RecurringInvoice> recurring = {};
+
+  /// Chart of accounts.
+  final Map<String, Account> chart = {};
+
+  /// Manual journal entries only (the rest of the ledger is derived).
+  final Map<String, JournalEntry> journals = {};
+  final Map<String, Tag> tags = {};
+  final Map<String, Reconciliation> reconciliations = {};
 
   int _seq = 1;
   int invoiceCounter = 1;

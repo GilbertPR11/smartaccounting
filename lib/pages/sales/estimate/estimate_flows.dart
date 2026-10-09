@@ -4,7 +4,7 @@ import '../../../models/estimate_model.dart';
 import '../../../models/invoice_model.dart';
 import '../../../routes/routes.dart';
 
-/// Navigation flows for estimates, shared by every button that starts one.
+// Navigation flows for estimates, shared by every button that starts one.
 
 Future<void> openEstimateDetail(BuildContext context, String estimateId) =>
     Navigator.pushNamed(context, PageRoutes.estimateDetail,

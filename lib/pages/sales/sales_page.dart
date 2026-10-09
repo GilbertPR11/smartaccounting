@@ -19,6 +19,7 @@ import '../../routes/routes.dart';
 import '../../theme/colors.dart';
 import '../../utils/ledger_summary.dart';
 import 'invoice/new_invoice_flow.dart';
+import '../home/app_shell.dart';
 
 /// Sales & payments: a money summary on top, then everything you can do.
 class SalesPage extends StatelessWidget {
@@ -32,7 +33,7 @@ class SalesPage extends StatelessWidget {
     final overdue = LedgerSummary.overdue(invoices, today);
     final toInvoice = context.watch<TransactionBloc>().state.invoiceable.length;
     final customerCount = context.watch<CustomerBloc>().state.customers.length;
-    final productCount = context.watch<ProductBloc>().state.products.length;
+    final productCount = context.watch<ProductBloc>().state.sold.length;
     final estimates = context.watch<EstimateBloc>().state.estimates;
     final openEstimates = estimates
         .where((e) => const {EstimateStatus.pending, EstimateStatus.accepted}
@@ -69,8 +70,10 @@ class SalesPage extends StatelessWidget {
         );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sales & payments')),
+      appBar: AppBar(leading: AppShell.menuButton(context), title: const Text('Sales & payments')),
       floatingActionButton: FloatingActionButton.extended(
+        // Own tag: on phones this page shares a route with Purchases.
+        heroTag: 'sales-fab',
         onPressed: () => showNewInvoiceSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('New'),

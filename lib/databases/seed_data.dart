@@ -3,9 +3,11 @@ import '../models/bill_model.dart';
 import '../models/business_profile_model.dart';
 import '../models/customer_model.dart';
 import '../models/estimate_model.dart';
+import '../models/journal_model.dart';
 import '../models/invoice_model.dart';
 import '../models/product_model.dart';
 import '../models/recurring_invoice_model.dart';
+import '../models/tag_model.dart';
 import '../models/transaction_model.dart';
 import '../models/vendor_model.dart';
 import '../utils/format.dart';
@@ -295,5 +297,47 @@ class SeedData {
         [BillLine(description: 'Annual hosting plan', category: 'Software', amount: 1200, tax: sst8)],
         paid: 400);
     txn(18, 'Payment for CH-77812', 400, TransactionType.expense, 'Software', billId: hosting.id);
+
+    // Things you buy (shown when adding bill lines).
+    for (final (name, cost, category) in [
+      ('Printer paper A4 (box of 5)', 62.0, 'Office Supplies'),
+      ('Business cards (box)', 37.5, 'Marketing'),
+    ]) {
+      final p = Product(
+        id: db.newId('p'),
+        name: name,
+        price: 0,
+        sold: false,
+        bought: true,
+        purchasePrice: cost,
+        expenseCategory: category,
+      );
+      db.products[p.id] = p;
+    }
+
+    // ------------------------------------------------ ledger extras
+    String accountId(String name) =>
+        db.chart.values.firstWhere((a) => a.name == name).id;
+
+    // A non-cash adjustment: the owner paid a software renewal personally.
+    final journal = JournalEntry(
+      id: db.newId('j'),
+      date: ago(11),
+      description: 'Software renewal paid personally by the owner',
+      lines: [
+        JournalLine(accountId: accountId('Software'), debit: 120),
+        JournalLine(accountId: accountId('Owner Investment'), credit: 120),
+      ],
+    );
+    db.journals[journal.id] = journal;
+
+    // A tag on the utility and rent payments of the office.
+    const office = Tag(id: 'g-office', name: 'KL office');
+    db.tags[office.id] = office;
+    for (final t in db.transactions.values.toList()) {
+      if (!t.isIncome && (t.category == 'Rent' || t.category == 'Utilities')) {
+        db.transactions[t.id] = t.copyWith(tagIds: [office.id]);
+      }
+    }
   }
 }

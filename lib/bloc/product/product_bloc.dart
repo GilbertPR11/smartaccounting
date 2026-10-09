@@ -37,7 +37,15 @@ class ProductBloc extends Bloc<ProductEvent, ProductState> {
   /// The list refreshes via the change stream; nothing to emit on success.
   Future<void> _onAdd(AddProduct event, Emitter<ProductState> emit) async {
     try {
-      await _repository.addProduct(name: event.name, price: event.price, tax: event.tax);
+      await _repository.addProduct(
+        name: event.name,
+        price: event.price,
+        tax: event.tax,
+        sold: event.sold,
+        bought: event.bought,
+        purchasePrice: event.purchasePrice,
+        expenseCategory: event.expenseCategory,
+      );
     } on AppException catch (e) {
       emit(state.copyWith(error: e.message));
     }

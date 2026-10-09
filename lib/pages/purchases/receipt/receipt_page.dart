@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../bloc/account/account_bloc.dart';
 import '../../../bloc/receipt/receipt_bloc.dart';
 import '../../../bloc/vendor/vendor_bloc.dart';
 import '../../../components/initials_avatar.dart';
@@ -148,7 +149,7 @@ class _ReviewReceiptState extends State<_ReviewReceipt> {
     try {
       await context.read<ReceiptRepository>().updateDetails(draft);
     } on AppException catch (e) {
-      _snack(e.message);
+      if (mounted) _snack(e.message);
       return;
     }
     if (!mounted) return;
@@ -272,7 +273,10 @@ class _ReviewReceiptState extends State<_ReviewReceipt> {
             value: _category,
             decoration: const InputDecoration(labelText: 'Category'),
             items: [
-              for (final c in Constants.expenseCategories)
+              for (final c in {
+                ...context.read<AccountBloc>().state.expenseNames,
+                if (_category != null) _category!,
+              })
                 DropdownMenuItem<String?>(value: c, child: Text(c)),
             ],
             onChanged: (v) => setState(() => _category = v),
@@ -281,7 +285,10 @@ class _ReviewReceiptState extends State<_ReviewReceipt> {
           DropdownButtonFormField<String>(
             value: _account,
             decoration: const InputDecoration(labelText: 'Paid from'),
-            items: [for (final a in accounts) DropdownMenuItem(value: a, child: Text(a))],
+            // Plus the saved one, in case that account was archived since.
+            items: [
+              for (final a in {...accounts, _account}) DropdownMenuItem(value: a, child: Text(a)),
+            ],
             onChanged: (v) => setState(() => _account = v ?? _account),
           ),
           const SizedBox(height: Space.md),
