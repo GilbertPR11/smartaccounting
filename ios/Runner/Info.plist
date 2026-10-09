@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose a logo for your invoices, or a photo of a receipt.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos of receipts to record your expenses.</string>
 </dict>
 </plist>

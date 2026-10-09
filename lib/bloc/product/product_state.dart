@@ -1,0 +1,23 @@
+part of 'product_bloc.dart';
+
+class ProductState extends Equatable {
+  const ProductState({
+    this.status = LoadStatus.initial,
+    this.products = const [],
+    this.error,
+  });
+
+  final LoadStatus status;
+  final List<Product> products;
+  final String? error;
+
+  ProductState copyWith({LoadStatus? status, List<Product>? products, String? error}) =>
+      ProductState(
+        status: status ?? this.status,
+        products: products ?? this.products,
+        error: error,
+      );
+
+  @override
+  List<Object?> get props => [status, products, error];
+}
