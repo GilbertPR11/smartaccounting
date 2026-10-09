@@ -31,6 +31,7 @@ class InvoiceFormBloc extends Bloc<InvoiceFormEvent, InvoiceFormState> {
         lines: event.lines,
         notes: event.notes,
         sourceTransactionId: event.sourceTransactionId,
+        estimateId: event.estimateId,
       );
       emit(InvoiceFormState(status: InvoiceFormStatus.success, created: invoice));
     } on AppException catch (e) {

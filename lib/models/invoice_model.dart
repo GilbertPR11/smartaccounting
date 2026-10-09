@@ -66,6 +66,8 @@ class Invoice extends Equatable {
     this.notes = '',
     this.sourceTransactionId,
     this.amountPaid = 0,
+    this.estimateId,
+    this.recurringId,
   });
 
   final String id;
@@ -79,6 +81,12 @@ class Invoice extends Equatable {
   /// Set when this invoice was generated from an existing income transaction.
   final String? sourceTransactionId;
   final double amountPaid;
+
+  /// Set when this invoice was converted from an estimate.
+  final String? estimateId;
+
+  /// Set when a recurring schedule issued this invoice.
+  final String? recurringId;
 
   double get subtotal => sumSubtotal(lines);
   double get taxTotal => sumTax(lines);
@@ -103,6 +111,8 @@ class Invoice extends Equatable {
         notes: notes,
         sourceTransactionId: sourceTransactionId,
         amountPaid: amountPaid ?? this.amountPaid,
+        estimateId: estimateId,
+        recurringId: recurringId,
       );
 
   @override
@@ -116,6 +126,8 @@ class Invoice extends Equatable {
         notes,
         sourceTransactionId,
         amountPaid,
+        estimateId,
+        recurringId,
       ];
 }
 

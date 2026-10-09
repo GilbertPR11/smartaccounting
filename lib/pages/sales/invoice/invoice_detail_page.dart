@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../bloc/customer/customer_bloc.dart';
+import '../../../bloc/estimate/estimate_bloc.dart';
 import '../../../bloc/invoice/invoice_bloc.dart';
+import '../../../bloc/recurring/recurring_bloc.dart';
 import '../../../bloc/setting/setting_bloc.dart';
 import '../../../bloc/transaction/transaction_bloc.dart';
 import '../../../components/centered_list_view.dart';
+import '../../../components/initials_avatar.dart';
 import '../../../components/invoice_document.dart';
 import '../../../components/section_header.dart';
 import '../../../components/status_chip.dart';
@@ -16,6 +19,8 @@ import '../../../models/invoice_model.dart';
 import '../../../repository/setting_repository.dart';
 import '../../../routes/routes.dart';
 import '../../../utils/format.dart';
+import '../estimate/estimate_flows.dart';
+import '../recurring/recurring_flows.dart';
 
 class InvoiceDetailPage extends StatefulWidget {
   const InvoiceDetailPage({
@@ -129,6 +134,8 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
     final source = txnState.byId(inv.sourceTransactionId);
     final payments = txnState.paymentsFor(inv.id, excludeId: inv.sourceTransactionId);
     final scheme = Theme.of(context).colorScheme;
+    final estimate = context.watch<EstimateBloc>().state.byId(inv.estimateId);
+    final schedule = context.watch<RecurringBloc>().state.byId(inv.recurringId);
 
     return BlocListener<InvoiceBloc, InvoiceState>(
       listenWhen: (prev, next) => next.error != null && prev.error != next.error,
@@ -212,6 +219,33 @@ class _InvoiceDetailPageState extends State<InvoiceDetailPage> {
                   style: TextStyle(color: scheme.error, fontSize: 12),
                 ),
               ),
+          ],
+
+          if (estimate != null || schedule != null) ...[
+            const SectionHeader('Where it came from'),
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  if (estimate != null)
+                    ListTile(
+                      leading: IconBadge(Icons.request_quote_outlined, color: scheme.primary),
+                      title: Text('Converted from ${estimate.number}'),
+                      subtitle: Text('Estimate dated ${fmtDate(estimate.issueDate)}'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => openEstimateDetail(context, estimate.id),
+                    ),
+                  if (schedule != null)
+                    ListTile(
+                      leading: IconBadge(Icons.autorenew_rounded, color: scheme.primary),
+                      title: const Text('Issued by a recurring schedule'),
+                      subtitle: Text(schedule.rhythm),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => openRecurringDetail(context, schedule.id),
+                    ),
+                ],
+              ),
+            ),
           ],
 
           if (payments.isNotEmpty) ...[

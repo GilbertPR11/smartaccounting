@@ -5,18 +5,21 @@ import '../../../bloc/transaction/transaction_bloc.dart';
 import '../../../models/invoice_model.dart';
 import '../../../models/transaction_model.dart';
 import '../../../routes/routes.dart';
+import '../estimate/estimate_flows.dart';
+import '../recurring/recurring_flows.dart';
 
 /// Navigation flows for invoices, shared by every "New invoice" button.
 /// All navigation goes through named routes in routes/routes.dart.
 
+/// "New…" sheet: invoice from a payment, blank invoice, estimate, recurring.
 Future<void> showNewInvoiceSheet(BuildContext context) async {
   final count = context.read<TransactionBloc>().state.invoiceable.length;
   final choice = await showModalBottomSheet<String>(
     context: context,
     showDragHandle: true,
     builder: (ctx) => SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: ListView(
+        shrinkWrap: true,
         children: [
           ListTile(
             leading: const Icon(Icons.swap_horiz),
@@ -33,14 +36,35 @@ Future<void> showNewInvoiceSheet(BuildContext context) async {
             subtitle: const Text('Bill a customer for work not yet paid'),
             onTap: () => Navigator.pop(ctx, 'blank'),
           ),
+          const Divider(height: 1),
+          ListTile(
+            leading: const Icon(Icons.request_quote_outlined),
+            title: const Text('Estimate'),
+            subtitle: const Text('Quote a price first; invoice it once accepted'),
+            onTap: () => Navigator.pop(ctx, 'estimate'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.autorenew_rounded),
+            title: const Text('Recurring invoice'),
+            subtitle: const Text('Bill the same thing every week, month or year'),
+            onTap: () => Navigator.pop(ctx, 'recurring'),
+          ),
           const SizedBox(height: 8),
         ],
       ),
     ),
   );
   if (!context.mounted) return;
-  if (choice == 'txn') await openTransactionPicker(context);
-  if (choice == 'blank') await openInvoiceForm(context);
+  switch (choice) {
+    case 'txn':
+      await openTransactionPicker(context);
+    case 'blank':
+      await openInvoiceForm(context);
+    case 'estimate':
+      await openEstimateForm(context);
+    case 'recurring':
+      await openRecurringForm(context);
+  }
 }
 
 Future<void> openTransactionPicker(BuildContext context) =>

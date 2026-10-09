@@ -6,6 +6,11 @@ import '../models/invoice_model.dart';
 import '../models/invoice_template_model.dart';
 import '../utils/format.dart';
 
+/// What the document is. Estimates share the invoice design (logo, colour,
+/// layout) but say ESTIMATE, show "Valid until" instead of "Due", and leave
+/// out payment details.
+enum DocumentKind { invoice, estimate }
+
 /// The invoice as the customer sees it, styled by an [InvoiceTemplate].
 ///
 /// This one widget is used by the invoice page AND the design preview, so
@@ -21,12 +26,17 @@ class InvoiceDocument extends StatelessWidget {
     required this.customer,
     required this.profile,
     required this.template,
+    this.kind = DocumentKind.invoice,
   });
 
   final Invoice invoice;
   final Customer? customer;
   final BusinessProfile profile;
   final InvoiceTemplate template;
+  final DocumentKind kind;
+
+  bool get _isEstimate => kind == DocumentKind.estimate;
+  String get _title => _isEstimate ? 'ESTIMATE' : template.title;
 
   static const _ink = Color(0xFF1F2937);
   static const _muted = Color(0xFF6B7280);
@@ -140,7 +150,7 @@ class InvoiceDocument extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(template.title, style: titleStyle.copyWith(color: onAccent)),
+              Text(_title, style: titleStyle.copyWith(color: onAccent)),
             ],
           ),
         );
@@ -159,7 +169,7 @@ class InvoiceDocument extends StatelessWidget {
                     child: Text(profile.name,
                         style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                   ),
-                  Text(template.title, style: titleStyle.copyWith(color: accent)),
+                  Text(_title, style: titleStyle.copyWith(color: accent)),
                 ],
               ),
               if (lines.isNotEmpty) ...[
@@ -192,7 +202,7 @@ class InvoiceDocument extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(template.title, style: titleStyle.copyWith(color: accent)),
+                  Text(_title, style: titleStyle.copyWith(color: accent)),
                 ],
               ),
               const SizedBox(height: 16),
@@ -215,7 +225,8 @@ class InvoiceDocument extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('BILL TO', style: TextStyle(color: _muted, fontSize: 11, letterSpacing: 1)),
+              Text(_isEstimate ? 'PREPARED FOR' : 'BILL TO',
+                  style: const TextStyle(color: _muted, fontSize: 11, letterSpacing: 1)),
               const SizedBox(height: 2),
               Text(c?.name ?? '—', style: const TextStyle(fontWeight: FontWeight.w600)),
               if (c != null && template.showCustomerAddress && c.address.isNotEmpty)
@@ -229,12 +240,16 @@ class InvoiceDocument extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            const Text('Invoice no.', style: label),
+            Text(_isEstimate ? 'Estimate no.' : 'Invoice no.', style: label),
             Text(invoice.number, style: const TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
             const Text('Date', style: label),
             Text(fmtDate(invoice.issueDate)),
-            if (template.showDueDate) ...[
+            if (_isEstimate) ...[
+              const SizedBox(height: 6),
+              const Text('Valid until', style: label),
+              Text(fmtDate(invoice.dueDate)),
+            ] else if (template.showDueDate) ...[
               const SizedBox(height: 6),
               const Text('Due', style: label),
               Text(invoice.dueDate == invoice.issueDate ? 'On receipt' : fmtDate(invoice.dueDate)),
@@ -336,7 +351,7 @@ class InvoiceDocument extends StatelessWidget {
               line('Tax', money(invoice.taxTotal)),
             const Divider(height: 12, color: _rule),
             line('Total', money(invoice.total), bold: true),
-            if (template.showAmountPaid && paid > 0) ...[
+            if (!_isEstimate && template.showAmountPaid && paid > 0) ...[
               line('Paid', '-${money(paid)}'),
               Container(
                 margin: const EdgeInsets.only(top: 6),
@@ -362,7 +377,9 @@ class InvoiceDocument extends StatelessWidget {
         const SizedBox(height: 2),
         Text(invoice.notes),
       ],
-      if (template.showPaymentInstructions && template.paymentInstructions.isNotEmpty) ...[
+      if (!_isEstimate &&
+          template.showPaymentInstructions &&
+          template.paymentInstructions.isNotEmpty) ...[
         const SizedBox(height: 18),
         Container(
           padding: const EdgeInsets.all(10),

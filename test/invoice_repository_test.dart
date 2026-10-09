@@ -24,7 +24,7 @@ void main() {
   /// Lets Bloc events and stream deliveries run.
   Future<void> settle() async {
     for (var i = 0; i < 5; i++) {
-      await settle();
+      await Future<void>.delayed(Duration.zero);
     }
   }
 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../models/estimate_model.dart';
 import '../models/invoice_model.dart';
+import '../models/recurring_invoice_model.dart';
 import '../models/transaction_model.dart';
 import '../pages/accounting/accounting_page.dart';
 import '../pages/dashboard/dashboard_page.dart';
@@ -13,14 +15,22 @@ import '../pages/purchases/purchases_page.dart';
 import '../pages/purchases/receipt/receipt_list_page.dart';
 import '../pages/purchases/receipt/receipt_page.dart';
 import '../pages/purchases/vendor/vendor_page.dart';
+import '../pages/sales/customer/customer_detail_page.dart';
 import '../pages/sales/customer/customer_page.dart';
+import '../pages/sales/estimate/estimate_detail_page.dart';
+import '../pages/sales/estimate/estimate_form_page.dart';
+import '../pages/sales/estimate/estimate_list_page.dart';
 import '../pages/sales/invoice/invoice_detail_page.dart';
 import '../pages/sales/invoice/invoice_form_page.dart';
 import '../pages/sales/invoice/invoice_list_page.dart';
 import '../pages/sales/invoice/invoice_template_page.dart';
 import '../pages/sales/invoice/transaction_picker_page.dart';
 import '../pages/sales/product/product_page.dart';
+import '../pages/sales/recurring/recurring_detail_page.dart';
+import '../pages/sales/recurring/recurring_form_page.dart';
+import '../pages/sales/recurring/recurring_list_page.dart';
 import '../pages/sales/sales_page.dart';
+import '../pages/sales/statement/statement_page.dart';
 
 /// Every page has a name here (smartpos: `Routes/routes.dart`).
 /// Names have no leading '/' so a tab's Navigator can start on one directly.
@@ -40,7 +50,15 @@ class PageRoutes {
   static const String transactionPicker = 'sales_transaction_picker';
   static const String invoiceTemplate = 'sales_invoice_template';
   static const String customers = 'sales_customers';
+  static const String customerDetail = 'sales_customer_detail'; // args: String customerId
   static const String products = 'sales_products';
+  static const String estimates = 'sales_estimates';
+  static const String estimateDetail = 'sales_estimate_detail'; // args: EstimateDetailArgs
+  static const String estimateForm = 'sales_estimate_form'; // args: EstimateFormArgs?
+  static const String recurring = 'sales_recurring';
+  static const String recurringDetail = 'sales_recurring_detail'; // args: RecurringDetailArgs
+  static const String recurringForm = 'sales_recurring_form'; // args: RecurringFormArgs?
+  static const String statements = 'sales_statements'; // args: StatementArgs?
 
   // Purchases.
   static const String bills = 'purchases_bills'; // args: BillListArgs?
@@ -85,10 +103,57 @@ class InvoiceDetailArgs {
 }
 
 class InvoiceFormArgs {
-  const InvoiceFormArgs({this.source});
+  const InvoiceFormArgs({this.source, this.estimate, this.customerId});
 
   /// Pre-fill from this income transaction.
   final BankTransaction? source;
+
+  /// Convert this estimate.
+  final Estimate? estimate;
+
+  /// Pre-select this customer.
+  final String? customerId;
+}
+
+class EstimateDetailArgs {
+  const EstimateDetailArgs(this.estimateId, {this.justSaved = false});
+
+  final String estimateId;
+  final bool justSaved;
+}
+
+class EstimateFormArgs {
+  const EstimateFormArgs({this.estimate, this.customerId});
+
+  /// Edit this estimate (null = new).
+  final Estimate? estimate;
+
+  /// Pre-select this customer on a new estimate.
+  final String? customerId;
+}
+
+class RecurringDetailArgs {
+  const RecurringDetailArgs(this.scheduleId, {this.justSaved = false});
+
+  final String scheduleId;
+  final bool justSaved;
+}
+
+class RecurringFormArgs {
+  const RecurringFormArgs({this.schedule, this.customerId});
+
+  /// Edit this schedule (null = new).
+  final RecurringInvoice? schedule;
+
+  /// Pre-select this customer on a new schedule.
+  final String? customerId;
+}
+
+class StatementArgs {
+  const StatementArgs({this.customerId});
+
+  /// Open the statement for this customer.
+  final String? customerId;
 }
 
 class AppRouter {
@@ -119,7 +184,10 @@ class AppRouter {
         final formArgs = args is InvoiceFormArgs ? args : const InvoiceFormArgs();
         return MaterialPageRoute<Invoice>(
           settings: settings,
-          builder: (_) => InvoiceFormPage(source: formArgs.source),
+          builder: (_) => InvoiceFormPage(
+              source: formArgs.source,
+              estimate: formArgs.estimate,
+              customerId: formArgs.customerId),
         );
       case PageRoutes.transactionPicker:
         page = const TransactionPickerPage();
@@ -147,6 +215,36 @@ class AppRouter {
         page = ReceiptPage(receiptId: args as String);
       case PageRoutes.customers:
         page = const CustomerPage();
+      case PageRoutes.customerDetail:
+        page = CustomerDetailPage(customerId: args as String);
+      case PageRoutes.estimates:
+        page = const EstimateListPage();
+      case PageRoutes.estimateDetail:
+        final estimateArgs = args as EstimateDetailArgs;
+        page = EstimateDetailPage(
+            estimateId: estimateArgs.estimateId, justSaved: estimateArgs.justSaved);
+      case PageRoutes.estimateForm:
+        final estimateFormArgs = args is EstimateFormArgs ? args : const EstimateFormArgs();
+        return MaterialPageRoute<Estimate>(
+          settings: settings,
+          builder: (_) => EstimateFormPage(
+              estimate: estimateFormArgs.estimate, customerId: estimateFormArgs.customerId),
+        );
+      case PageRoutes.recurring:
+        page = const RecurringListPage();
+      case PageRoutes.recurringDetail:
+        final recurringArgs = args as RecurringDetailArgs;
+        page = RecurringDetailPage(
+            scheduleId: recurringArgs.scheduleId, justSaved: recurringArgs.justSaved);
+      case PageRoutes.recurringForm:
+        final recurringFormArgs = args is RecurringFormArgs ? args : const RecurringFormArgs();
+        return MaterialPageRoute<RecurringInvoice>(
+          settings: settings,
+          builder: (_) => RecurringFormPage(
+              schedule: recurringFormArgs.schedule, customerId: recurringFormArgs.customerId),
+        );
+      case PageRoutes.statements:
+        page = StatementPage(customerId: args is StatementArgs ? args.customerId : null);
       case PageRoutes.products:
         page = const ProductPage();
       default:

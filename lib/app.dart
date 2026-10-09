@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'bloc/bill/bill_bloc.dart';
 import 'bloc/customer/customer_bloc.dart';
+import 'bloc/estimate/estimate_bloc.dart';
 import 'bloc/invoice/invoice_bloc.dart';
 import 'bloc/product/product_bloc.dart';
 import 'bloc/receipt/receipt_bloc.dart';
+import 'bloc/recurring/recurring_bloc.dart';
 import 'bloc/setting/setting_bloc.dart';
 import 'bloc/transaction/transaction_bloc.dart';
 import 'bloc/vendor/vendor_bloc.dart';
@@ -14,9 +16,11 @@ import 'databases/local_db.dart';
 import 'pages/home/home_page.dart';
 import 'repository/bill_repository.dart';
 import 'repository/customer_repository.dart';
+import 'repository/estimate_repository.dart';
 import 'repository/invoice_repository.dart';
 import 'repository/product_repository.dart';
 import 'repository/receipt_repository.dart';
+import 'repository/recurring_repository.dart';
 import 'repository/setting_repository.dart';
 import 'repository/transaction_repository.dart';
 import 'repository/vendor_repository.dart';
@@ -47,6 +51,10 @@ class SmartAccountingApp extends StatelessWidget {
         RepositoryProvider<VendorRepository>(create: (_) => VendorRepository(db)),
         RepositoryProvider<BillRepository>(create: (_) => BillRepository(db)),
         RepositoryProvider<ReceiptRepository>(create: (_) => ReceiptRepository(db)),
+        RepositoryProvider<EstimateRepository>(create: (_) => EstimateRepository(db)),
+        // Issues invoices through InvoiceRepository, so it gets that one injected.
+        RepositoryProvider<RecurringRepository>(
+            create: (ctx) => RecurringRepository(db, ctx.read<InvoiceRepository>())),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -90,6 +98,18 @@ class SmartAccountingApp extends StatelessWidget {
             lazy: false,
             create: (ctx) => InvoiceBloc(repository: ctx.read<InvoiceRepository>())
               ..add(const LoadInvoices()),
+          ),
+          BlocProvider<EstimateBloc>(
+            lazy: false,
+            create: (ctx) => EstimateBloc(repository: ctx.read<EstimateRepository>())
+              ..add(const LoadEstimates()),
+          ),
+          // catchUp: issue every recurring invoice that came due while the
+          // app was closed. There's no server to do it at midnight.
+          BlocProvider<RecurringBloc>(
+            lazy: false,
+            create: (ctx) => RecurringBloc(repository: ctx.read<RecurringRepository>())
+              ..add(const LoadRecurring(catchUp: true)),
           ),
         ],
         child: MaterialApp(

@@ -9,6 +9,7 @@ import '../../../components/initials_avatar.dart';
 import '../../../components/money_text.dart';
 import '../../../components/search_field.dart';
 import '../../../config/layout.dart';
+import '../../../routes/routes.dart';
 import '../../../theme/colors.dart';
 
 class CustomerPage extends StatefulWidget {
@@ -60,6 +61,8 @@ class _CustomerPageState extends State<CustomerPage> {
           final theirs = invoices.where((inv) => inv.customerId == c.id).toList();
           final owed = theirs.fold<double>(0, (s, inv) => s + inv.balance);
           return ListTile(
+            onTap: () =>
+                Navigator.pushNamed(context, PageRoutes.customerDetail, arguments: c.id),
             leading: InitialsAvatar(c.name),
             title: Text(c.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text(

@@ -19,29 +19,58 @@ class InvoiceRepository {
   Future<List<Invoice>> fetchInvoices() async =>
       _db.invoices.values.toList()..sort((a, b) => b.issueDate.compareTo(a.issueDate));
 
-  Future<String> nextInvoiceNumber() async =>
-      'INV-${_db.invoiceCounter.toString().padLeft(4, '0')}';
+  /// The next free INV-#### number (skips numbers typed in by hand).
+  Future<String> nextInvoiceNumber() async => _nextFreeNumber();
+
+  String _nextFreeNumber() {
+    var n = _db.invoiceCounter;
+    String fmt(int n) => 'INV-${n.toString().padLeft(4, '0')}';
+    while (_numberTaken(fmt(n))) {
+      n++;
+    }
+    return fmt(n);
+  }
+
+  bool _numberTaken(String number) =>
+      _db.invoices.values.any((i) => i.number.toLowerCase() == number.toLowerCase());
 
   /// Creates an invoice. When [sourceTransactionId] is given, the invoice is
   /// linked to that transaction and its amount is applied as a payment
   /// (capped at the invoice total; any excess stays unapplied).
+  ///
+  /// [estimateId] marks that estimate as converted, in the same write.
+  /// [recurringId] records which schedule issued it (set by
+  /// RecurringRepository only). Pass a null [number] to use the next free one.
   Future<Invoice> createInvoice({
     required String customerId,
-    required String number,
+    String? number,
     required DateTime issueDate,
     required DateTime dueDate,
     required List<InvoiceLine> lines,
     String notes = '',
     String? sourceTransactionId,
+    String? estimateId,
+    String? recurringId,
   }) async {
-    final trimmed = number.trim();
+    final trimmed = (number ?? _nextFreeNumber()).trim();
     if (trimmed.isEmpty) throw const AppException('Invoice number is required.');
     if (lines.isEmpty) throw const AppException('Add at least one item.');
     if (!_db.customers.containsKey(customerId)) {
       throw const AppException('Choose a customer.');
     }
-    if (_db.invoices.values.any((i) => i.number.toLowerCase() == trimmed.toLowerCase())) {
+    if (_numberTaken(trimmed)) {
       throw AppException('Invoice number $trimmed already exists.');
+    }
+    if (dateOnly(dueDate).isBefore(dateOnly(issueDate))) {
+      throw const AppException('The due date can\'t be before the invoice date.');
+    }
+
+    final estimate = estimateId == null ? null : _db.estimates[estimateId];
+    if (estimateId != null) {
+      if (estimate == null) throw const AppException('Estimate not found.');
+      if (estimate.isConverted) {
+        throw const AppException('This estimate has already been invoiced.');
+      }
     }
 
     final BankTransaction? source =
@@ -51,7 +80,11 @@ class InvoiceRepository {
           '(already linked, not income, or not a sale).');
     }
 
-    return _db.transaction({DbTable.invoices, DbTable.transactions}, () {
+    return _db.transaction({
+      DbTable.invoices,
+      DbTable.transactions,
+      if (estimate != null) DbTable.estimates,
+    }, () {
       var inv = Invoice(
         id: _db.newId('i'),
         number: trimmed,
@@ -61,11 +94,16 @@ class InvoiceRepository {
         lines: List.unmodifiable(lines),
         notes: notes.trim(),
         sourceTransactionId: source?.id,
+        estimateId: estimate?.id,
+        recurringId: recurringId,
       );
       if (source != null) {
         inv = inv.copyWith(amountPaid: round2(math.min(source.amount, inv.total)));
         _db.transactions[source.id] =
             source.linkTo(invoiceId: inv.id, customerId: customerId);
+      }
+      if (estimate != null) {
+        _db.estimates[estimate.id] = estimate.copyWith(invoiceId: inv.id);
       }
       _db.invoices[inv.id] = inv;
       _db.invoiceCounter++;

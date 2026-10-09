@@ -2,8 +2,10 @@ import '../config/constants.dart';
 import '../models/bill_model.dart';
 import '../models/business_profile_model.dart';
 import '../models/customer_model.dart';
+import '../models/estimate_model.dart';
 import '../models/invoice_model.dart';
 import '../models/product_model.dart';
+import '../models/recurring_invoice_model.dart';
 import '../models/transaction_model.dart';
 import '../models/vendor_model.dart';
 import '../utils/format.dart';
@@ -72,7 +74,11 @@ class SeedData {
         productId: p.id, description: p.name, quantity: qty, unitPrice: p.price, tax: p.tax);
 
     Invoice invoice(Customer c, DateTime issue, DateTime due, List<InvoiceLine> lines,
-        {String notes = '', String? sourceId, double paid = 0}) {
+        {String notes = '',
+        String? sourceId,
+        double paid = 0,
+        String? estimateId,
+        String? recurringId}) {
       final inv = Invoice(
         id: db.newId('i'),
         number: 'INV-${db.invoiceCounter.toString().padLeft(4, '0')}',
@@ -83,6 +89,8 @@ class SeedData {
         notes: notes,
         sourceTransactionId: sourceId,
         amountPaid: paid,
+        estimateId: estimateId,
+        recurringId: recurringId,
       );
       db.invoices[inv.id] = inv;
       db.invoiceCounter++;
@@ -91,6 +99,23 @@ class SeedData {
 
     void link(BankTransaction t, Invoice inv) =>
         db.transactions[t.id] = t.linkTo(invoiceId: inv.id, customerId: inv.customerId);
+
+    Estimate estimate(Customer c, int issuedAgo, int validDays, List<InvoiceLine> lines,
+        {EstimateDecision? decision, String notes = ''}) {
+      final e = Estimate(
+        id: db.newId('e'),
+        number: 'EST-${db.estimateCounter.toString().padLeft(4, '0')}',
+        customerId: c.id,
+        issueDate: ago(issuedAgo),
+        expiryDate: ago(issuedAgo).add(Duration(days: validDays)),
+        lines: lines,
+        notes: notes,
+        decision: decision,
+      );
+      db.estimates[e.id] = e;
+      db.estimateCounter++;
+      return e;
+    }
 
     // Customers & products.
     final tan = customer('Tan Hardware Sdn Bhd',
@@ -127,10 +152,69 @@ class SeedData {
     // Classic invoices (invoice first, payment later).
     invoice(siti, ago(40), ago(10), [line(consulting, 3)],
         notes: 'Thank you for your business.');
+    // Lim & Co accepted a quote first; the invoice was converted from it.
+    final limQuote = estimate(lim, 22, 30, [line(setup), line(maintenance)],
+        decision: EstimateDecision.accepted);
     final limInv = invoice(lim, ago(15), ago(15).add(const Duration(days: 30)),
-        [line(setup), line(maintenance)], paid: 500);
+        [line(setup), line(maintenance)], paid: 500, estimateId: limQuote.id);
+    db.estimates[limQuote.id] = limQuote.copyWith(invoiceId: limInv.id);
     txn(8, 'Payment for ${limInv.number}', 500, TransactionType.income, 'Sales',
         customerId: lim.id, invoiceId: limInv.id);
+
+    // Other estimates: expired, awaiting a reply, accepted but not invoiced.
+    estimate(kopi, 50, 30, [line(maintenance, 12)],
+        notes: 'Annual website maintenance, billed monthly.');
+    estimate(siti, 3, 30, [line(consulting, 6), line(setup)],
+        notes: 'Prices valid for 30 days. 50% deposit on acceptance.');
+    estimate(tan, 6, 14, [line(consulting, 10)], decision: EstimateDecision.accepted);
+
+    // Recurring: Kopi Kita's bookkeeping, monthly from the 1st of last month.
+    // Both invoices so far are issued; last month's is paid.
+    final kopiPlan = RecurringInvoice(
+      id: db.newId('r'),
+      customerId: kopi.id,
+      lines: [line(bookkeeping)],
+      frequency: RecurFrequency.monthly,
+      startDate: DateTime(today.year, today.month - 1, 1),
+      termsDays: 14,
+      notes: 'Monthly bookkeeping retainer.',
+      issuedCount: 2,
+    );
+    db.recurring[kopiPlan.id] = kopiPlan;
+    final kopiFirst = kopiPlan.occurrence(0);
+    final kopiPaid = invoice(kopi, kopiFirst, kopiFirst.add(const Duration(days: 14)),
+        kopiPlan.lines,
+        notes: kopiPlan.notes, recurringId: kopiPlan.id, paid: 1296);
+    txn(today.difference(kopiFirst).inDays - 10,
+        'DuitNow transfer KOPI KITA CAFE', 1296, TransactionType.income, 'Sales',
+        customerId: kopi.id, invoiceId: kopiPaid.id);
+    final kopiSecond = kopiPlan.occurrence(1);
+    invoice(kopi, kopiSecond, kopiSecond.add(const Duration(days: 14)), kopiPlan.lines,
+        notes: kopiPlan.notes, recurringId: kopiPlan.id);
+
+    // Siti: quarterly maintenance that starts next week (nothing issued yet).
+    final sitiPlan = RecurringInvoice(
+      id: db.newId('r'),
+      customerId: siti.id,
+      lines: [line(maintenance, 3)],
+      frequency: RecurFrequency.quarterly,
+      startDate: today.add(const Duration(days: 7)),
+      termsDays: 30,
+    );
+    db.recurring[sitiPlan.id] = sitiPlan;
+
+    // Tan Hardware: weekly on-site support, paused, at most 8 visits.
+    final tanPlan = RecurringInvoice(
+      id: db.newId('r'),
+      customerId: tan.id,
+      lines: [line(consulting, 2)],
+      frequency: RecurFrequency.weekly,
+      startDate: today.add(const Duration(days: 3)),
+      maxCount: 8,
+      termsDays: 7,
+      paused: true,
+    );
+    db.recurring[tanPlan.id] = tanPlan;
 
     // Recent income NOT yet invoiced — these show up in the picker.
     txn(2, 'DuitNow transfer KOPI KITA CAFE', 1296, TransactionType.income, 'Sales',

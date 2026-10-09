@@ -3,10 +3,12 @@ import 'dart:async';
 import '../models/bill_model.dart';
 import '../models/business_profile_model.dart';
 import '../models/customer_model.dart';
+import '../models/estimate_model.dart';
 import '../models/invoice_model.dart';
 import '../models/invoice_template_model.dart';
 import '../models/product_model.dart';
 import '../models/receipt_model.dart';
+import '../models/recurring_invoice_model.dart';
 import '../models/transaction_model.dart';
 import '../models/vendor_model.dart';
 import '../utils/format.dart';
@@ -21,6 +23,8 @@ enum DbTable {
   vendors,
   bills,
   receipts,
+  estimates,
+  recurring,
 }
 
 /// In-memory stand-in for the local database (smartpos: `Databases/db.dart`).
@@ -53,9 +57,12 @@ class LocalDb {
   final Map<String, Vendor> vendors = {};
   final Map<String, Bill> bills = {};
   final Map<String, Receipt> receipts = {};
+  final Map<String, Estimate> estimates = {};
+  final Map<String, RecurringInvoice> recurring = {};
 
   int _seq = 1;
   int invoiceCounter = 1;
+  int estimateCounter = 1;
 
   String newId(String prefix) => '$prefix${_seq++}';
 

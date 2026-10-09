@@ -29,6 +29,14 @@ String monthShort(DateTime d) => _months[d.month - 1];
 
 DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
+/// [d] plus [months] calendar months, clamped to the last day of the target
+/// month: 31 Jan + 1 month = 28 Feb (29 in a leap year).
+DateTime addMonths(DateTime d, int months) {
+  final first = DateTime(d.year, d.month + months, 1);
+  final lastDay = DateTime(first.year, first.month + 1, 0).day;
+  return DateTime(first.year, first.month, d.day > lastDay ? lastDay : d.day);
+}
+
 /// Round to 2 decimal places (sen). All money math should pass through this.
 double round2(double v) => (v * 100).roundToDouble() / 100;
 
@@ -72,6 +80,26 @@ String relativeDue(DateTime due, DateTime today) {
   if (days > 1) return 'Due in $days days';
   if (days == -1) return '1 day overdue';
   return '${-days} days overdue';
+}
+
+/// Estimate validity in words: "Valid for 12 more days", "Expired 3 days ago".
+String relativeExpiry(DateTime expiry, DateTime today) {
+  final days = dateOnly(expiry).difference(dateOnly(today)).inDays;
+  if (days == 0) return 'Expires today';
+  if (days == 1) return 'Expires tomorrow';
+  if (days > 1) return 'Valid for $days more days';
+  if (days == -1) return 'Expired yesterday';
+  return 'Expired ${-days} days ago';
+}
+
+/// Days until [date] in words: "today", "tomorrow", "in 5 days", "3 days ago".
+String relativeDay(DateTime date, DateTime today) {
+  final days = dateOnly(date).difference(dateOnly(today)).inDays;
+  if (days == 0) return 'today';
+  if (days == 1) return 'tomorrow';
+  if (days == -1) return 'yesterday';
+  if (days > 1) return 'in $days days';
+  return '${-days} days ago';
 }
 
 /// "Tan Hardware Sdn Bhd" → "TH"

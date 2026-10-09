@@ -16,6 +16,7 @@ class SubmitInvoice extends InvoiceFormEvent {
     required this.lines,
     this.notes = '',
     this.sourceTransactionId,
+    this.estimateId,
   });
 
   final String customerId;
@@ -26,7 +27,10 @@ class SubmitInvoice extends InvoiceFormEvent {
   final String notes;
   final String? sourceTransactionId;
 
+  /// Converting this estimate.
+  final String? estimateId;
+
   @override
   List<Object?> get props =>
-      [customerId, number, issueDate, dueDate, lines, notes, sourceTransactionId];
+      [customerId, number, issueDate, dueDate, lines, notes, sourceTransactionId, estimateId];
 }
