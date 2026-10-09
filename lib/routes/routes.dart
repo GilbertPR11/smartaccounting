@@ -2,9 +2,24 @@ import 'package:flutter/material.dart';
 
 import '../models/estimate_model.dart';
 import '../models/invoice_model.dart';
+import '../models/journal_model.dart';
 import '../models/recurring_invoice_model.dart';
 import '../models/transaction_model.dart';
 import '../pages/accounting/accounting_page.dart';
+import '../pages/accounting/chart/chart_of_accounts_page.dart';
+import '../pages/accounting/journal/journal_form_page.dart';
+import '../pages/accounting/reconciliation/reconcile_account_page.dart';
+import '../pages/accounting/reconciliation/reconciliation_page.dart';
+import '../pages/accounting/reports/account_report_page.dart';
+import '../pages/accounting/reports/aging_report_page.dart';
+import '../pages/accounting/reports/balance_sheet_page.dart';
+import '../pages/accounting/reports/profit_loss_page.dart';
+import '../pages/accounting/reports/reports_page.dart';
+import '../pages/accounting/reports/sst_report_page.dart';
+import '../pages/accounting/reports/trial_balance_page.dart';
+import '../pages/accounting/transaction/import_statement_page.dart';
+import '../pages/accounting/transaction/transaction_form_page.dart';
+import '../pages/accounting/transaction/transaction_list_page.dart';
 import '../pages/dashboard/dashboard_page.dart';
 import '../models/bill_model.dart';
 import '../models/receipt_model.dart';
@@ -65,8 +80,51 @@ class PageRoutes {
   static const String billDetail = 'purchases_bill_detail'; // args: BillDetailArgs
   static const String billForm = 'purchases_bill_form'; // args: BillFormArgs?
   static const String vendors = 'purchases_vendors';
+  static const String purchaseProducts = 'purchases_products';
   static const String receipts = 'purchases_receipts';
   static const String receipt = 'purchases_receipt'; // args: String receiptId
+
+  // Accounting.
+  static const String transactions = 'accounting_transactions';
+  static const String transactionForm = 'accounting_transaction_form'; // args: TransactionFormArgs?
+  static const String journalForm = 'accounting_journal_form'; // args: JournalFormArgs?
+  static const String chartOfAccounts = 'accounting_chart';
+  static const String reconciliation = 'accounting_reconciliation';
+  static const String reconcileAccount = 'accounting_reconcile_account'; // args: String account
+  static const String importStatement = 'accounting_import_statement';
+  static const String reports = 'accounting_reports';
+  static const String reportProfitLoss = 'accounting_report_pnl';
+  static const String reportBalanceSheet = 'accounting_report_balance_sheet';
+  static const String reportTrialBalance = 'accounting_report_trial_balance';
+  static const String reportAccount = 'accounting_report_account'; // args: AccountReportArgs?
+  static const String reportAgedReceivables = 'accounting_report_aged_receivables';
+  static const String reportAgedPayables = 'accounting_report_aged_payables';
+  static const String reportSst = 'accounting_report_sst';
+}
+
+class TransactionFormArgs {
+  const TransactionFormArgs({this.transaction, this.type = TransactionType.expense});
+
+  /// Edit this transaction (null = new).
+  final BankTransaction? transaction;
+
+  /// Money in or out, for a new transaction.
+  final TransactionType type;
+}
+
+class JournalFormArgs {
+  const JournalFormArgs({this.entry});
+
+  /// Edit this entry (null = new).
+  final JournalEntry? entry;
+}
+
+class AccountReportArgs {
+  const AccountReportArgs(this.accountId, {this.from, this.to});
+
+  final String? accountId;
+  final DateTime? from;
+  final DateTime? to;
 }
 
 class BillListArgs {
@@ -207,6 +265,8 @@ class AppRouter {
               receiptId: billFormArgs.receiptId,
               receipt: billFormArgs.receipt),
         );
+      case PageRoutes.purchaseProducts:
+        page = const ProductPage(purchases: true);
       case PageRoutes.vendors:
         page = const VendorPage();
       case PageRoutes.receipts:
@@ -243,6 +303,46 @@ class AppRouter {
           builder: (_) => RecurringFormPage(
               schedule: recurringFormArgs.schedule, customerId: recurringFormArgs.customerId),
         );
+      case PageRoutes.transactions:
+        page = const TransactionListPage();
+      case PageRoutes.transactionForm:
+        final txnArgs = args is TransactionFormArgs ? args : const TransactionFormArgs();
+        return MaterialPageRoute<BankTransaction>(
+          settings: settings,
+          builder: (_) => TransactionFormPage(transaction: txnArgs.transaction, type: txnArgs.type),
+        );
+      case PageRoutes.journalForm:
+        final journalArgs = args is JournalFormArgs ? args : const JournalFormArgs();
+        return MaterialPageRoute<JournalEntry>(
+          settings: settings,
+          builder: (_) => JournalFormPage(entry: journalArgs.entry),
+        );
+      case PageRoutes.chartOfAccounts:
+        page = const ChartOfAccountsPage();
+      case PageRoutes.reconciliation:
+        page = const ReconciliationPage();
+      case PageRoutes.reconcileAccount:
+        page = ReconcileAccountPage(account: args as String);
+      case PageRoutes.importStatement:
+        page = const ImportStatementPage();
+      case PageRoutes.reports:
+        page = const ReportsPage();
+      case PageRoutes.reportProfitLoss:
+        page = const ProfitLossPage();
+      case PageRoutes.reportBalanceSheet:
+        page = const BalanceSheetPage();
+      case PageRoutes.reportTrialBalance:
+        page = const TrialBalancePage();
+      case PageRoutes.reportAccount:
+        final accountArgs = args is AccountReportArgs ? args : const AccountReportArgs(null);
+        page = AccountReportPage(
+            accountId: accountArgs.accountId, from: accountArgs.from, to: accountArgs.to);
+      case PageRoutes.reportAgedReceivables:
+        page = const AgingReportPage(payables: false);
+      case PageRoutes.reportAgedPayables:
+        page = const AgingReportPage(payables: true);
+      case PageRoutes.reportSst:
+        page = const SstReportPage();
       case PageRoutes.statements:
         page = StatementPage(customerId: args is StatementArgs ? args.customerId : null);
       case PageRoutes.products:

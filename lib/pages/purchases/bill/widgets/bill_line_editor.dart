@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../bloc/account/account_bloc.dart';
 import '../../../../config/constants.dart';
 import '../../../../models/bill_model.dart';
 import '../../../../theme/colors.dart';
@@ -10,18 +12,23 @@ Future<BillLine?> showBillLineEditor(
   BuildContext context, {
   BillLine? line,
   String? defaultCategory,
+  bool isNew = false,
 }) =>
     showModalBottomSheet<BillLine>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _BillLineEditor(line: line, defaultCategory: defaultCategory),
+      builder: (_) =>
+          _BillLineEditor(line: line, defaultCategory: defaultCategory, isNew: isNew || line == null),
     );
 
 class _BillLineEditor extends StatefulWidget {
-  const _BillLineEditor({this.line, this.defaultCategory});
+  const _BillLineEditor({this.line, this.defaultCategory, this.isNew = true});
 
   final BillLine? line;
   final String? defaultCategory;
+
+  /// A new line (possibly pre-filled from a product) rather than an edit.
+  final bool isNew;
 
   @override
   State<_BillLineEditor> createState() => _BillLineEditorState();
@@ -33,7 +40,7 @@ class _BillLineEditorState extends State<_BillLineEditor> {
   late final _amount = TextEditingController(
       text: widget.line == null ? '' : widget.line!.amount.toStringAsFixed(2));
   late String _category =
-      widget.line?.category ?? widget.defaultCategory ?? Constants.expenseCategories.last;
+      widget.line?.category ?? widget.defaultCategory ?? 'Other';
   late String? _taxId = widget.line?.tax?.id;
 
   @override
@@ -58,8 +65,10 @@ class _BillLineEditorState extends State<_BillLineEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final isNew = widget.line == null;
-    final categories = {...Constants.expenseCategories, _category}.toList();
+    final isNew = widget.isNew;
+    // Expense accounts from the chart, plus the current one if it's
+    // archived or not in the chart.
+    final categories = {...context.read<AccountBloc>().state.expenseNames, _category}.toList();
     return Padding(
       padding: EdgeInsets.fromLTRB(
           Space.lg, 0, Space.lg, MediaQuery.of(context).viewInsets.bottom + Space.lg),

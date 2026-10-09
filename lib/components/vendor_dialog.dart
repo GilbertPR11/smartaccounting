@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../config/constants.dart';
+import '../bloc/account/account_bloc.dart';
 import '../exception/app_exception.dart';
 import '../models/vendor_model.dart';
 import '../repository/vendor_repository.dart';
@@ -16,6 +16,7 @@ Future<Vendor?> showAddVendorDialog(BuildContext context, {String initialName = 
   final phone = TextEditingController();
   String? category;
   final formKey = GlobalKey<FormState>();
+  final categories = context.read<AccountBloc>().state.expenseNames;
 
   final ok = await showDialog<bool>(
     context: context,
@@ -46,7 +47,7 @@ Future<Vendor?> showAddVendorDialog(BuildContext context, {String initialName = 
                     ),
                     items: [
                       const DropdownMenuItem<String?>(value: null, child: Text('None')),
-                      for (final c in Constants.expenseCategories)
+                      for (final c in categories)
                         DropdownMenuItem<String?>(value: c, child: Text(c)),
                     ],
                     onChanged: (v) => setLocal(() => category = v),

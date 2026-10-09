@@ -8,7 +8,7 @@ lib/
 ├── app.dart               wires LocalDb → repositories → Blocs → MaterialApp
 ├── config/                constants.dart (currency, taxes, terms), layout.dart (breakpoints)
 ├── theme/                 colors.dart, theme.dart
-├── routes/                routes.dart — PageRoutes names, typed args, AppRouter
+├── routes/                routes.dart — PageRoutes names, typed args, AppRouter; nav_menu.dart — sidebar/drawer menu
 ├── models/                one immutable Equatable model per file (*_model.dart)
 ├── databases/             local_db.dart (in-memory for now), seed_data.dart
 ├── repository/            *_repository.dart — the ONLY code that touches LocalDb
@@ -16,7 +16,7 @@ lib/
 ├── components/            reusable widgets (no business rules); invoice_document.dart renders invoices
 ├── pages/<area>/          screens, grouped like the app's navigation
 ├── exception/             AppException — user-fixable business errors
-└── utils/                 pure functions: format.dart, ledger_summary.dart, statement.dart
+└── utils/                 pure functions: format, ledger_summary, statement, ledger (double-entry), reports, csv_import
 ```
 
 There is no `api/` folder yet because there is no backend. When one exists, add `api/<feature>_service.dart` (as in smartpos) and let the repository decide between local and remote.

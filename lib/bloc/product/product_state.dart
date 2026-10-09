@@ -11,6 +11,12 @@ class ProductState extends Equatable {
   final List<Product> products;
   final String? error;
 
+  /// For invoices, estimates and recurring invoices.
+  List<Product> get sold => products.where((p) => p.sold).toList();
+
+  /// For bills.
+  List<Product> get bought => products.where((p) => p.bought).toList();
+
   ProductState copyWith({LoadStatus? status, List<Product>? products, String? error}) =>
       ProductState(
         status: status ?? this.status,

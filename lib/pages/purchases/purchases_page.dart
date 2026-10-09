@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../bloc/bill/bill_bloc.dart';
+import '../../bloc/product/product_bloc.dart';
 import '../../bloc/receipt/receipt_bloc.dart';
 import '../../bloc/transaction/transaction_bloc.dart';
 import '../../bloc/vendor/vendor_bloc.dart';
@@ -18,6 +19,7 @@ import '../../routes/routes.dart';
 import '../../theme/colors.dart';
 import '../../utils/ledger_summary.dart';
 import 'purchase_flows.dart';
+import '../home/app_shell.dart';
 
 /// Purchases: what you owe, what you've spent, and the receipts to file.
 class PurchasesPage extends StatelessWidget {
@@ -31,6 +33,7 @@ class PurchasesPage extends StatelessWidget {
     final bills = context.watch<BillBloc>().state.bills;
     final receipts = context.watch<ReceiptBloc>().state;
     final vendorCount = context.watch<VendorBloc>().state.vendors.length;
+    final boughtCount = context.watch<ProductBloc>().state.bought.length;
     final expenses =
         context.watch<TransactionBloc>().state.transactions.where((t) => !t.isIncome).toList();
 
@@ -46,7 +49,9 @@ class PurchasesPage extends StatelessWidget {
     // Spending by category this month, biggest first.
     final byCategory = <String, double>{};
     for (final t in expenses.where((t) => !t.date.isBefore(monthStart))) {
-      byCategory.update(t.category, (v) => v + t.amount, ifAbsent: () => t.amount);
+      for (final (category, amount) in t.allocations) {
+        byCategory.update(category, (v) => v + amount, ifAbsent: () => amount);
+      }
     }
     final categories = byCategory.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
@@ -67,8 +72,10 @@ class PurchasesPage extends StatelessWidget {
         );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Purchases')),
+      appBar: AppBar(leading: AppShell.menuButton(context), title: const Text('Purchases')),
       floatingActionButton: FloatingActionButton.extended(
+        // Own tag: on phones this page shares a route with Sales.
+        heroTag: 'purchases-fab',
         onPressed: () => showAddPurchaseSheet(context),
         icon: const Icon(Icons.add),
         label: const Text('Add'),
@@ -152,6 +159,13 @@ class PurchasesPage extends StatelessWidget {
                   'Who you buy from',
                   () => Navigator.pushNamed(context, PageRoutes.vendors),
                   trailing: Text('$vendorCount', style: text.labelLarge),
+                ),
+                navRow(
+                  Icons.shopping_cart_outlined,
+                  'Products you buy',
+                  'Saved items with their usual cost, for bills',
+                  () => Navigator.pushNamed(context, PageRoutes.purchaseProducts),
+                  trailing: Text('$boughtCount', style: text.labelLarge),
                 ),
               ], l.hairline),
             ),

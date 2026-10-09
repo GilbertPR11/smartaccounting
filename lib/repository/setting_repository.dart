@@ -15,6 +15,7 @@ class SettingRepository {
   // Read-only values used synchronously across the app.
   DateTime get today => _db.today;
   double get openingBalance => _db.openingBalance;
+  String? get openingAccountId => _db.openingAccountId;
   List<String> get accounts => List.unmodifiable(_db.accounts);
 
   Future<BusinessProfile> fetchProfile() async => _db.profile;

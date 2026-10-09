@@ -10,3 +10,12 @@ sealed class TransactionEvent extends Equatable {
 class LoadTransactions extends TransactionEvent {
   const LoadTransactions();
 }
+
+class DeleteTransaction extends TransactionEvent {
+  const DeleteTransaction(this.transactionId);
+
+  final String transactionId;
+
+  @override
+  List<Object?> get props => [transactionId];
+}

@@ -10,7 +10,7 @@ import '../../models/receipt_model.dart';
 import '../../repository/receipt_repository.dart';
 import '../../routes/routes.dart';
 
-/// Navigation flows for Purchases, shared by every "add" button.
+// Navigation flows for Purchases, shared by every "add" button.
 
 Future<void> showAddPurchaseSheet(BuildContext context) async {
   final choice = await showModalBottomSheet<String>(

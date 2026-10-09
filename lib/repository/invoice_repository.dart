@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../databases/local_db.dart';
 import '../exception/app_exception.dart';
+import '../models/account_model.dart';
 import '../models/invoice_model.dart';
 import '../models/transaction_model.dart';
 import '../utils/format.dart';
@@ -75,7 +76,13 @@ class InvoiceRepository {
 
     final BankTransaction? source =
         sourceTransactionId == null ? null : _db.transactions[sourceTransactionId];
-    if (sourceTransactionId != null && (source == null || !source.isInvoiceable)) {
+    // Only money categorised as income is a sale (not a loan, owner money…).
+    final sourceIsIncome = source != null &&
+        _db.chart.values.any((a) =>
+            a.type == AccountType.income &&
+            a.name.toLowerCase() == source.category.trim().toLowerCase());
+    if (sourceTransactionId != null &&
+        (source == null || !source.isInvoiceable || !sourceIsIncome)) {
       throw const AppException('This transaction can no longer be invoiced '
           '(already linked, not income, or not a sale).');
     }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smartaccounting/app.dart';
 import 'package:smartaccounting/databases/local_db.dart';
+import 'package:smartaccounting/pages/home/widgets/side_menu.dart';
+import 'package:smartaccounting/pages/sales/customer/customer_page.dart';
 import 'package:smartaccounting/pages/sales/invoice/invoice_detail_page.dart';
 
 void main() {
@@ -40,24 +42,44 @@ void main() {
     expect(find.text('RM 350.00'), findsWidgets);
   });
 
-  testWidgets('tablet: compact navigation rail', (tester) async {
+  testWidgets('tablet: sidebar starts hidden, ☰ opens it', (tester) async {
     await pumpAt(tester, const Size(820, 1180));
-    final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
-    expect(rail.extended, isFalse);
+    expect(find.byType(SideMenuRail), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
+
+    await tester.tap(find.byTooltip('Show menu'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SideMenuPanel), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Hide menu'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SideMenuRail), findsOneWidget);
   });
 
-  testWidgets('desktop: sidebar stays, invoices open side by side', (tester) async {
+  testWidgets('phone: ☰ drawer opens a page inside a category', (tester) async {
+    await pumpAt(tester, const Size(400, 900));
+    await tester.tap(find.byTooltip('Menu'));
+    await tester.pumpAndSettle();
+
+    final inMenu = find.byType(SideMenuPanel);
+    await tester.tap(find.descendant(of: inMenu, matching: find.text('Sales & payments')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: inMenu, matching: find.text('Customers')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CustomerPage), findsOneWidget);
+  });
+
+  testWidgets('desktop: sidebar dropdown opens invoices side by side', (tester) async {
     await pumpAt(tester, const Size(1440, 900));
-    final rail = tester.widget<NavigationRail>(find.byType(NavigationRail));
-    expect(rail.extended, isTrue);
+    final inMenu = find.byType(SideMenuPanel);
+    expect(inMenu, findsOneWidget);
 
-    await tester.tap(find.text('Sales'));
+    await tester.tap(find.descendant(of: inMenu, matching: find.text('Sales & payments')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Invoices'));
+    await tester.tap(find.descendant(of: inMenu, matching: find.text('Invoices')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byType(SideMenuPanel), findsOneWidget); // sidebar stays
     expect(find.byType(InvoiceDetailPage), findsOneWidget);
   });
 }

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'bloc/account/account_bloc.dart';
 import 'bloc/bill/bill_bloc.dart';
 import 'bloc/customer/customer_bloc.dart';
 import 'bloc/estimate/estimate_bloc.dart';
 import 'bloc/invoice/invoice_bloc.dart';
+import 'bloc/journal/journal_bloc.dart';
 import 'bloc/product/product_bloc.dart';
 import 'bloc/receipt/receipt_bloc.dart';
+import 'bloc/reconciliation/reconciliation_bloc.dart';
 import 'bloc/recurring/recurring_bloc.dart';
 import 'bloc/setting/setting_bloc.dart';
 import 'bloc/transaction/transaction_bloc.dart';
@@ -14,12 +17,15 @@ import 'bloc/vendor/vendor_bloc.dart';
 import 'config/constants.dart';
 import 'databases/local_db.dart';
 import 'pages/home/home_page.dart';
+import 'repository/account_repository.dart';
 import 'repository/bill_repository.dart';
 import 'repository/customer_repository.dart';
 import 'repository/estimate_repository.dart';
 import 'repository/invoice_repository.dart';
+import 'repository/journal_repository.dart';
 import 'repository/product_repository.dart';
 import 'repository/receipt_repository.dart';
+import 'repository/reconciliation_repository.dart';
 import 'repository/recurring_repository.dart';
 import 'repository/setting_repository.dart';
 import 'repository/transaction_repository.dart';
@@ -51,6 +57,10 @@ class SmartAccountingApp extends StatelessWidget {
         RepositoryProvider<VendorRepository>(create: (_) => VendorRepository(db)),
         RepositoryProvider<BillRepository>(create: (_) => BillRepository(db)),
         RepositoryProvider<ReceiptRepository>(create: (_) => ReceiptRepository(db)),
+        RepositoryProvider<AccountRepository>(create: (_) => AccountRepository(db)),
+        RepositoryProvider<JournalRepository>(create: (_) => JournalRepository(db)),
+        RepositoryProvider<ReconciliationRepository>(
+            create: (_) => ReconciliationRepository(db)),
         RepositoryProvider<EstimateRepository>(create: (_) => EstimateRepository(db)),
         // Issues invoices through InvoiceRepository, so it gets that one injected.
         RepositoryProvider<RecurringRepository>(
@@ -98,6 +108,22 @@ class SmartAccountingApp extends StatelessWidget {
             lazy: false,
             create: (ctx) => InvoiceBloc(repository: ctx.read<InvoiceRepository>())
               ..add(const LoadInvoices()),
+          ),
+          BlocProvider<AccountBloc>(
+            lazy: false,
+            create: (ctx) => AccountBloc(repository: ctx.read<AccountRepository>())
+              ..add(const LoadAccounts()),
+          ),
+          BlocProvider<JournalBloc>(
+            lazy: false,
+            create: (ctx) => JournalBloc(repository: ctx.read<JournalRepository>())
+              ..add(const LoadJournals()),
+          ),
+          BlocProvider<ReconciliationBloc>(
+            lazy: false,
+            create: (ctx) =>
+                ReconciliationBloc(repository: ctx.read<ReconciliationRepository>())
+                  ..add(const LoadReconciliations()),
           ),
           BlocProvider<EstimateBloc>(
             lazy: false,

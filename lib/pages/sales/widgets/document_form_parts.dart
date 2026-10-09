@@ -125,7 +125,7 @@ class LineItemsSection extends StatelessWidget {
       );
 
   Future<void> _add(BuildContext context) async {
-    final products = context.read<ProductBloc>().state.products;
+    final products = context.read<ProductBloc>().state.sold;
     final choice = await showModalBottomSheet<Object>(
       context: context,
       showDragHandle: true,

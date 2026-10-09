@@ -4,6 +4,7 @@ class TransactionState extends Equatable {
   const TransactionState({
     this.status = LoadStatus.initial,
     this.transactions = const [],
+    this.tags = const [],
     this.error,
   });
 
@@ -11,7 +12,17 @@ class TransactionState extends Equatable {
 
   /// Newest first.
   final List<BankTransaction> transactions;
+
+  /// By name.
+  final List<Tag> tags;
   final String? error;
+
+  Tag? tagById(String id) {
+    for (final t in tags) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
 
   /// Money received that can still be turned into an invoice.
   List<BankTransaction> get invoiceable =>
@@ -31,14 +42,16 @@ class TransactionState extends Equatable {
   TransactionState copyWith({
     LoadStatus? status,
     List<BankTransaction>? transactions,
+    List<Tag>? tags,
     String? error,
   }) =>
       TransactionState(
         status: status ?? this.status,
         transactions: transactions ?? this.transactions,
+        tags: tags ?? this.tags,
         error: error,
       );
 
   @override
-  List<Object?> get props => [status, transactions, error];
+  List<Object?> get props => [status, transactions, tags, error];
 }

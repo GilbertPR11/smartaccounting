@@ -11,6 +11,7 @@ import 'package:smartaccounting/models/customer_model.dart';
 import 'package:smartaccounting/models/invoice_model.dart';
 import 'package:smartaccounting/models/invoice_template_model.dart';
 import 'package:smartaccounting/repository/setting_repository.dart';
+import 'package:smartaccounting/pages/home/widgets/side_menu.dart';
 
 void main() {
   final today = DateTime(2026, 10, 7);
@@ -105,9 +106,10 @@ void main() {
     await tester.pumpWidget(SmartAccountingApp(db: LocalDb(today: today)));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Sales'));
+    final inMenu = find.byType(SideMenuPanel);
+    await tester.tap(find.descendant(of: inMenu, matching: find.text('Sales & payments')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Invoice design'));
+    await tester.tap(find.descendant(of: inMenu, matching: find.text('Invoice design')));
     await tester.pumpAndSettle();
 
     expect(find.byType(InvoiceDocument), findsOneWidget);

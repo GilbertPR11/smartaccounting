@@ -8,8 +8,8 @@ import '../../../routes/routes.dart';
 import '../estimate/estimate_flows.dart';
 import '../recurring/recurring_flows.dart';
 
-/// Navigation flows for invoices, shared by every "New invoice" button.
-/// All navigation goes through named routes in routes/routes.dart.
+// Navigation flows for invoices, shared by every "New invoice" button.
+// All navigation goes through named routes in routes/routes.dart.
 
 /// "New…" sheet: invoice from a payment, blank invoice, estimate, recurring.
 Future<void> showNewInvoiceSheet(BuildContext context) async {
